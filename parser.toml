@@ -1,4 +1,4 @@
-# src/parser.cpp is generated from this file (with some modification)
+# lib/parser.cpp is generated from this file (with some modification)
 # with the help of https://github.com/MashPlant/lalr1
 
 include = """#include <cstdlib>

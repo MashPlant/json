@@ -1,0 +1,68 @@
+# src/parser.cpp is generated from this file (with some modification)
+# with the help of https://github.com/MashPlant/lalr1
+
+include = """#include <cstdlib>
+#include "json.hpp" """
+
+priority = []
+
+start = 'Value'
+
+[lexical]
+'\[' = 'LBrk'
+'\]' = 'RBrk'
+'\{' = 'LBra'
+'\}' = 'RBra'
+':' = 'Colon'
+',' = 'Comma'
+'null' = 'Null'
+'true' = 'True'
+'false' = 'False'
+'[-+]?[0-9]+[.]?[0-9]*([eE][-+]?[0-9]+)?' = 'Number'
+'"[^"\\]*(\\.[^"\\]*)*"' = 'String'
+'\s+' = '_Eps'
+
+[[production]]
+lhs = 'Value'
+ty = 'JsonValue'
+rhs = [
+  { rhs = ['Null'], act = '__ = JsonValue();' },
+  { rhs = ['False'], act = '__ = JsonValue(false);' },
+  { rhs = ['True'], act = '__ = JsonValue(true);' },
+  { rhs = ['Number'], act = '__ = JsonValue(atof(_1.piece.data()));' },
+  { rhs = ['String'], act = '__ = JsonValue(_1.piece);' },
+  { rhs = ['LBrk', 'Array', 'RBrk'], act = '__ = JsonValue(std::move(_2));' },
+  { rhs = ['LBra', 'Object', 'RBra'], act = '__ = JsonValue(std::move(_2));' },
+]
+
+[[production]]
+lhs = 'Array'
+ty = 'std::vector<JsonValue>'
+rhs = [
+  { rhs = ['Array1'], act = '__ = std::move(_1);' },
+  { rhs = [], act = '__ = std::vector<JsonValue>();' },
+]
+
+[[production]]
+lhs = 'Array1'
+ty = 'std::vector<JsonValue>'
+rhs = [
+  { rhs = ['Array1', 'Comma', 'Value'], act = '_1.push_back(std::move(_3)); __ = std::move(_1);' },
+  { rhs = ['Value'], act = '__ = std::vector{std::move(_1)};' },
+]
+
+[[production]]
+lhs = 'Object'
+ty = 'JsonValue::Object'
+rhs = [
+  { rhs = ['Object1'], act = '__ = std::move(_1);' },
+  { rhs = [], act = '__ = JsonValue::Object();' },
+]
+
+[[production]]
+lhs = 'Object1'
+ty = 'JsonValue::Object'
+rhs = [
+  { rhs = ['Object1', 'Comma', 'String', 'Colon', 'Value'], act = '_1.push_back({_3.piece, std::move(_5)}); __ = std::move(_1);' },
+  { rhs = ['String', 'Colon', 'Value'], act = '__ = JsonValue::Object{{_1.piece, std::move(_3)}};' },
+]
